@@ -122,29 +122,26 @@ function Dashboard({ onSwitchProfile }) {
     useEffect(() => {
         if (isBluetoothSupported()) {
             const attemptAutoConnect = async () => {
-                // Short delay to ensure browser is ready
-                setTimeout(async () => {
-                    const results = await tryAutoConnect({
-                        onTrainerData: (data) => {
-                            updateTrainerData(data);
-                        },
-                        onHRMData: (data) => {
-                            updateHRData(data);
-                        },
-                        onConnectionChange: (status) => {
-                            updateTrainerStatus(status);
-                        }
-                    });
-                    
-                    if (results && results.trainer) {
-                        console.log('Auto-connected Trainer:', results.trainer.name);
-                        updateTrainerStatus('connected', results.trainer.name);
+                const results = await tryAutoConnect({
+                    onTrainerData: (data) => {
+                        updateTrainerData(data);
+                    },
+                    onHRMData: (data) => {
+                        updateHRData(data);
+                    },
+                    onConnectionChange: (status) => {
+                        updateTrainerStatus(status);
                     }
-                    if (results && results.hrm) {
-                        console.log('Auto-connected HRM:', results.hrm.name);
-                        updateHRMStatus('connected', results.hrm.name);
-                    }
-                }, 1000);
+                });
+                
+                if (results && results.trainer) {
+                    console.log('Auto-connected Trainer:', results.trainer.name);
+                    updateTrainerStatus('connected', results.trainer.name);
+                }
+                if (results && results.hrm) {
+                    console.log('Auto-connected HRM:', results.hrm.name);
+                    updateHRMStatus('connected', results.hrm.name);
+                }
             };
             attemptAutoConnect();
         }

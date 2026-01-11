@@ -15,6 +15,10 @@ const HEART_RATE_MEASUREMENT_UUID = 0x2A37;
 const WAHOO_SERVICE_UUID = 'a026ee07-0a7d-4ab3-97fa-f1500f9feb8b';
 const WAHOO_CONTROL_UUID = 'a026e005-0a7d-4ab3-97fa-f1500f9feb8b';
 
+// Storage keys
+const SAVED_TRAINER_ID_KEY = 'last_trainer_id';
+const SAVED_HRM_ID_KEY = 'last_hrm_id';
+
 // Control Point Op Codes
 const OP_CODE_REQUEST_CONTROL = 0x00;
 const OP_CODE_RESET = 0x01;
@@ -62,60 +66,84 @@ export async function tryAutoConnect(callbacks = {}) {
         const devices = await navigator.bluetooth.getDevices();
         if (devices.length === 0) return results;
 
+        const lastTrainerId = localStorage.getItem(SAVED_TRAINER_ID_KEY);
+        const lastHrmId = localStorage.getItem(SAVED_HRM_ID_KEY);
+
         console.log('Found paired devices:', devices.length);
 
-        for (const device of devices) {
+        // Sort devices to prioritize last used ones
+        const sortedDevices = [...devices].sort((a, b) => {
+            if (a.id === lastTrainerId || a.id === lastHrmId) return -1;
+            if (b.id === lastTrainerId || b.id === lastHrmId) return 1;
+            return 0;
+        });
+
+        for (const device of sortedDevices) {
             // Skip if already connected
-            if (device.gatt.connected) continue;
+            if (device.gatt.connected) {
+                if (device === trainerDevice) results.trainer = { name: device.name, id: device.id };
+                if (device === hrmDevice) results.hrm = { name: device.name, id: device.id };
+                continue;
+            }
+
+            // Optimization: If we already found both, stop
+            if (results.trainer && results.hrm) break;
 
             try {
                 // Connect
                 const server = await device.gatt.connect();
 
                 // Check for FTMS service (Trainer)
-                try {
-                    const service = await server.getPrimaryService(FTMS_SERVICE_UUID);
-                    
-                    // It is a trainer! Setup characteristics
-                    trainerDevice = device;
-                    trainerServer = server;
-                    ftmsService = service;
-                    
-                    indoorBikeDataChar = await ftmsService.getCharacteristic(INDOOR_BIKE_DATA_UUID);
-                    await indoorBikeDataChar.startNotifications();
-                    indoorBikeDataChar.addEventListener('characteristicvaluechanged', handleIndoorBikeData);
+                if (!results.trainer) {
+                    try {
+                        const service = await server.getPrimaryService(FTMS_SERVICE_UUID);
+                        
+                        trainerDevice = device;
+                        trainerServer = server;
+                        ftmsService = service;
+                        
+                        indoorBikeDataChar = await ftmsService.getCharacteristic(INDOOR_BIKE_DATA_UUID);
+                        await indoorBikeDataChar.startNotifications();
+                        indoorBikeDataChar.addEventListener('characteristicvaluechanged', handleIndoorBikeData);
 
-                    controlPointChar = await ftmsService.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT_UUID);
-                    await requestControl();
+                        controlPointChar = await ftmsService.getCharacteristic(FITNESS_MACHINE_CONTROL_POINT_UUID);
+                        await requestControl();
 
-                    device.addEventListener('gattserverdisconnected', handleTrainerDisconnect);
-                    results.trainer = { name: trainerDevice.name, id: trainerDevice.id };
-                    console.log('Auto-connected Trainer:', device.name);
-                    continue; // Move to next device
-                } catch {
-                    // Not a trainer, maybe HRM?
+                        device.addEventListener('gattserverdisconnected', handleTrainerDisconnect);
+                        results.trainer = { name: trainerDevice.name, id: trainerDevice.id };
+                        localStorage.setItem(SAVED_TRAINER_ID_KEY, device.id);
+                        console.log('Auto-connected Trainer:', device.name);
+                        continue; 
+                    } catch {
+                        // Not a trainer
+                    }
                 }
 
                 // Check for Heart Rate service (HRM)
-                try {
-                    const service = await server.getPrimaryService(HEART_RATE_SERVICE_UUID);
-                    
-                    // It is an HRM!
-                    hrmDevice = device;
-                    hrmServer = server;
-                    hrmService = service;
-                    
-                    hrmMeasurementChar = await hrmService.getCharacteristic(HEART_RATE_MEASUREMENT_UUID);
-                    await hrmMeasurementChar.startNotifications();
-                    hrmMeasurementChar.addEventListener('characteristicvaluechanged', handleHeartRateMeasurement);
-                    
-                    device.addEventListener('gattserverdisconnected', handleHRMDisconnect);
-                    results.hrm = { name: hrmDevice.name, id: hrmDevice.id };
-                    console.log('Auto-connected HRM:', device.name);
-                    continue; 
-                } catch {
-                    // Not an HRM either
-                    console.log('Device not recognized as Trainer or HRM:', device.name);
+                if (!results.hrm) {
+                    try {
+                        const service = await server.getPrimaryService(HEART_RATE_SERVICE_UUID);
+                        
+                        hrmDevice = device;
+                        hrmServer = server;
+                        hrmService = service;
+                        
+                        hrmMeasurementChar = await hrmService.getCharacteristic(HEART_RATE_MEASUREMENT_UUID);
+                        await hrmMeasurementChar.startNotifications();
+                        hrmMeasurementChar.addEventListener('characteristicvaluechanged', handleHeartRateMeasurement);
+                        
+                        device.addEventListener('gattserverdisconnected', handleHRMDisconnect);
+                        results.hrm = { name: hrmDevice.name, id: hrmDevice.id };
+                        localStorage.setItem(SAVED_HRM_ID_KEY, device.id);
+                        console.log('Auto-connected HRM:', device.name);
+                        continue; 
+                    } catch {
+                        // Not an HRM either
+                    }
+                }
+                
+                // If reached here and not assigned, disconnect
+                if (device !== trainerDevice && device !== hrmDevice) {
                     device.gatt.disconnect();
                 }
 
@@ -182,6 +210,7 @@ export async function connectTrainer(callbacks = {}) {
         }
 
         onConnectionChange('connected');
+        localStorage.setItem(SAVED_TRAINER_ID_KEY, trainerDevice.id);
         return { name: trainerDevice.name, id: trainerDevice.id };
 
     } catch (error) {
@@ -213,6 +242,7 @@ export async function connectHRM(callbacks = {}) {
     await hrmMeasurementChar.startNotifications();
     hrmMeasurementChar.addEventListener('characteristicvaluechanged', handleHeartRateMeasurement);
 
+    localStorage.setItem(SAVED_HRM_ID_KEY, hrmDevice.id);
     return { name: hrmDevice.name, id: hrmDevice.id };
 }
 
