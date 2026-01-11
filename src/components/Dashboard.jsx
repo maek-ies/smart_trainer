@@ -12,17 +12,19 @@ import { requestWakeLock, releaseWakeLock, setupWakeLockReacquisition } from '..
 import rideRecorder from '../services/rideRecorder';
 import { saveRideToHistory } from '../services/rideHistoryService';
 import { fetchTodayWorkout } from '../services/intervalsService';
+import { VO2MAX_TEST_WORKOUT } from '../services/workoutService';
 import PowerChart from './PowerChart';
 import HRChart from './HRChart';
 import RideSummary from './RideSummary';
 import WorkoutPlayer from './WorkoutPlayer';
+import PlannedWorkoutMode from './PlannedWorkoutMode';
 import './Dashboard.css';
 
 // Memoized metric display
 const Metric = memo(function Metric({ value, label, unit, className = '', color }) {
     return (
         <div className={`metric ${className}`}>
-            <span 
+            <span
                 className="metric-value"
                 style={color ? { color: color, textShadow: `0 0 20px ${color}40` } : {}}
             >
@@ -61,7 +63,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     const timerRef = useRef(null);
     // Use ref to access latest state in callbacks and effects without dependencies issues
     const latestState = useRef(state);
-    
+
     useEffect(() => {
         latestState.current = state;
     }, [state]);
@@ -69,6 +71,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     const [completedRide, setCompletedRide] = useState(null);
     const [todaysWorkout, setTodaysWorkout] = useState(null);
     const [showWorkoutPlayer, setShowWorkoutPlayer] = useState(false);
+    const [isPlannedWorkoutActive, setIsPlannedWorkoutActive] = useState(false);
 
     // Format time as MM:SS or HH:MM:SS
     const formatTime = (seconds) => {
@@ -136,7 +139,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                         updateTrainerStatus(status);
                     }
                 });
-                
+
                 if (results && results.trainer) {
                     console.log('Auto-connected Trainer:', results.trainer.name);
                     updateTrainerStatus('connected', results.trainer.name);
@@ -189,6 +192,15 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                 releaseWakeLock();
             }
         } else {
+            // Check if trainer is connected before starting
+            if (state.trainerStatus !== 'connected') {
+                const proceed = window.confirm("Trainer not connected. Would you like to connect now?");
+                if (proceed) {
+                    handleConnectTrainer();
+                    return;
+                }
+            }
+
             // Start fresh ride
             startRide();
             await requestWakeLock();
@@ -199,7 +211,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                 await btSetTargetPower(state.targetPower);
             }
         }
-    }, [state.isRiding, state.isPaused, state.trainerStatus, state.targetPower, startRide, pauseRide, resumeRide]);
+    }, [state.isRiding, state.isPaused, state.trainerStatus, state.targetPower, startRide, pauseRide, resumeRide, handleConnectTrainer]);
 
     // Stop ride
     const handleStopRide = useCallback(() => {
@@ -210,7 +222,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
         if (rideData && rideData.dataPoints.length > 0) {
             // Save to local history
             saveRideToHistory(rideData);
-            
+
             // Show ride summary modal
             console.log('Ride completed:', rideData.summary);
             setCompletedRide(rideData);
@@ -222,7 +234,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
         if (state.isRiding && !state.isPaused) {
             timerRef.current = setInterval(() => {
                 const s = latestState.current;
-                
+
                 // Record data point every second
                 rideRecorder.addDataPoint({
                     power: s.power,
@@ -275,37 +287,43 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
             {/* Header */}
             <header className="dashboard-header compact">
                 <div className="header-left">
-                    <button className="btn btn-icon" onClick={onSwitchProfile} title="Switch Profile">
-                        👤
+                    <button className="btn btn-icon btn-profile-name" onClick={onSwitchProfile} title="Switch Profile">
+                        👤 {state.profile?.name || 'Rider'}
                     </button>
                     <button className="btn btn-icon" onClick={onShowHistory} title="Ride History">
                         📜
                     </button>
-                    <h3 className="header-title">{state.profile?.name || 'Rider'}</h3>
+                    {!state.isRiding && (
+                        <button
+                            className="btn btn-intervals btn-small"
+                            onClick={() => setIsPlannedWorkoutActive(true)}
+                            style={{ marginLeft: '8px', marginRight: '8px' }}
+                        >
+                            🚀 Planned Workout
+                        </button>
+                    )}
                 </div>
 
                 <div className="header-center">
-                    {state.trainerStatus === 'connected' && (
-                        <div className="ride-controls">
-                            {!state.isRiding ? (
-                                <button className="btn btn-start btn-small" onClick={toggleRide}>
-                                    ▶ Start
+                    <div className="ride-controls">
+                        {!state.isRiding ? (
+                            <button className="btn btn-start btn-small" onClick={toggleRide}>
+                                ▶ Start
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    className={`btn btn-small ${state.isPaused ? 'btn-start' : 'btn-secondary'}`}
+                                    onClick={toggleRide}
+                                >
+                                    {state.isPaused ? '▶ Resume' : '⏸ Pause'}
                                 </button>
-                            ) : (
-                                <>
-                                    <button 
-                                        className={`btn btn-small ${state.isPaused ? 'btn-start' : 'btn-secondary'}`} 
-                                        onClick={toggleRide}
-                                    >
-                                        {state.isPaused ? '▶ Resume' : '⏸ Pause'}
-                                    </button>
-                                    <button className="btn btn-stop btn-small" onClick={handleStopRide}>
-                                        ⏹ Stop
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    )}
+                                <button className="btn btn-stop btn-small" onClick={handleStopRide}>
+                                    ⏹ Stop
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 <div className="header-actions">
@@ -314,9 +332,9 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                         onClick={handleConnectTrainer}
                         disabled={state.trainerStatus === 'connecting'}
                     >
-                        {state.trainerStatus === 'connected' ? '✅ Connected' : 
-                         state.trainerStatus === 'connecting' ? '⏳ Connecting...' : 
-                         '🔗 Connect'}
+                        {state.trainerStatus === 'connected' ? '✅ Connected' :
+                            state.trainerStatus === 'connecting' ? '⏳ Connecting...' :
+                                '🔗 Connect'}
                     </button>
                     <div className="connection-indicators">
                         <span
@@ -373,7 +391,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                                 −
                             </button>
                             <div className="erg-display">
-                                <div 
+                                <div
                                     className="erg-target"
                                     style={{ color: `var(--zone-${targetZone.zone})`, textShadow: `0 0 30px var(--zone-${targetZone.zone})` }}
                                 >
@@ -390,12 +408,12 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                             </button>
                         </div>
                         <div className="slider-container">
-                            <input 
-                                type="range" 
-                                min={sliderMin} 
-                                max={sliderMax} 
-                                step="5" 
-                                value={state.targetPower} 
+                            <input
+                                type="range"
+                                min={sliderMin}
+                                max={sliderMax}
+                                step="5"
+                                value={state.targetPower}
                                 onChange={(e) => {
                                     const val = parseInt(e.target.value);
                                     setTargetPower(val);
@@ -482,6 +500,28 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                     rideData={completedRide}
                     profile={state.profile}
                     onClose={() => setCompletedRide(null)}
+                />
+            )}
+
+            {/* Planned Workout Mode Overlay */}
+            {isPlannedWorkoutActive && (
+                <PlannedWorkoutMode
+                    workout={VO2MAX_TEST_WORKOUT}
+                    state={state}
+                    onTargetPowerChange={(power) => {
+                        if (state.trainerStatus === 'connected') {
+                            setTargetPower(power);
+                            btSetTargetPower(power);
+                        }
+                    }}
+                    onComplete={() => {
+                        console.log('Planned Workout complete!');
+                        handleStopRide();
+                        setIsPlannedWorkoutActive(false);
+                    }}
+                    onManualExit={() => setIsPlannedWorkoutActive(false)}
+                    onConnectTrainer={handleConnectTrainer}
+                    onConnectHRM={handleConnectHRM}
                 />
             )}
         </div>

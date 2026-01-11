@@ -53,6 +53,12 @@
     gap: var(--space-sm);
 }
 
+.btn-profile-name {
+    gap: var(--space-sm);
+    padding: 0 var(--space-md);
+    white-space: nowrap;
+}
+
 .btn-xsmall {
     min-height: 28px;
     padding: 2px 8px;
@@ -88,19 +94,23 @@
 .connection-indicators {
     display: flex;
     gap: var(--space-sm);
-    align-items: center; /* Ensure vertical alignment */
+    align-items: center;
+    /* Ensure vertical alignment */
 }
 
 .connection-indicators .connection-dot {
-    width: 12px; /* Slightly larger for better visibility */
+    width: 12px;
+    /* Slightly larger for better visibility */
     height: 12px;
     border-radius: 50%;
     cursor: pointer;
     transition: all var(--transition-fast);
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: var(--color-text-muted); /* Default state */
-    display: block; /* Ensure it takes space */
+    background-color: var(--color-text-muted);
+    /* Default state */
+    display: block;
+    /* Ensure it takes space */
 }
 
 .connection-indicators .connection-dot::after {
@@ -156,7 +166,8 @@
     background: rgba(255, 255, 255, 0.1);
     outline: none;
     transition: background 0.2s;
-    display: block; /* Ensure it is block to respect margin */
+    display: block;
+    /* Ensure it is block to respect margin */
 }
 
 .power-slider::-webkit-slider-thumb {
