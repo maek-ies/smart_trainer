@@ -1,0 +1,138 @@
+/* Workout Player Styles */
+.workout-player {
+    background: var(--glass-bg-elevated);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    border: 1px solid var(--glass-highlight);
+    box-shadow: var(--glass-shadow);
+}
+
+.workout-header {
+    margin-bottom: var(--space-xl);
+}
+
+.workout-name {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+}
+
+.workout-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.workout-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent), #a78bfa, #f472b6);
+    border-radius: var(--radius-full);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+}
+
+/* Current Step Display */
+.current-step {
+    text-align: center;
+    padding: var(--space-xl) 0;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: var(--space-lg);
+    position: relative;
+}
+
+.step-power {
+    font-family: var(--font-mono);
+    font-size: 5rem;
+    font-weight: 800;
+    color: var(--color-watts);
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+}
+
+.step-power-unit {
+    font-size: var(--text-3xl);
+    color: var(--color-text-muted);
+    margin-left: var(--space-xs);
+    font-weight: 400;
+}
+
+.step-remaining {
+    font-family: var(--font-mono);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-top: var(--space-sm);
+}
+
+.step-name {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+}
+
+/* Next Step Preview */
+.next-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    padding: var(--space-md);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.next-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.next-power {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--color-watts);
+}
+
+.next-duration {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Workout Stats */
+.workout-stats {
+    display: flex;
+    justify-content: space-around;
+}
+
+.workout-stat {
+    text-align: center;
+}
+
+.workout-stat .stat-value {
+    font-family: var(--font-mono);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    display: block;
+}
+
+.workout-stat .stat-label {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+    font-weight: 600;
+}
