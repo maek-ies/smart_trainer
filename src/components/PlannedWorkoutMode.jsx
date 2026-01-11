@@ -92,8 +92,27 @@ const PlannedWorkoutMode = ({
                 </div>
 
                 <div className="header-center">
-                    <div className="workout-status-badge">
-                        {workout.name}
+                    <div className="ride-controls">
+                        {!state.isRiding ? (
+                            <button className="btn btn-start btn-small" onClick={onToggleRide}>
+                                ▶ Start
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    className={`btn btn-small ${state.isPaused ? 'btn-start' : 'btn-secondary'}`}
+                                    onClick={onToggleRide}
+                                >
+                                    {state.isPaused ? '▶ Resume' : '⏸ Pause'}
+                                </button>
+                                <button className="btn btn-stop btn-small" onClick={onStopRide}>
+                                    Stop
+                                </button>
+                                <button className="btn btn-secondary btn-small" onClick={skipStep} title="Skip Step">
+                                    ⏭ Skip
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -149,22 +168,8 @@ const PlannedWorkoutMode = ({
                     />
                 </div>
 
-                {/* Right Panel: Charts & Controls */}
+                {/* Right Panel: Charts */}
                 <div className="rhs-panel-charts">
-                    <div className="workout-controls-overlay">
-                        <button
-                            className={`btn btn-large ${state.isPaused || !state.isRiding ? 'btn-start' : 'btn-secondary'}`}
-                            onClick={onToggleRide}
-                        >
-                            {state.isPaused || !state.isRiding ? '▶' : '⏸'}
-                        </button>
-                        <button className="btn btn-large btn-stop" onClick={onStopRide}>
-                            ⏹
-                        </button>
-                        <button className="btn btn-large btn-secondary" onClick={skipStep} title="Skip Step">
-                            ⏭
-                        </button>
-                    </div>
 
                     <div className="mini-chart">
                         <PowerChart
