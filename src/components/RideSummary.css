@@ -144,6 +144,81 @@
     letter-spacing: 0.5px;
 }
 
+.summary-zones {
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.zone-distribution {
+    background: rgba(255, 255, 255, 0.02);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+}
+
+.zone-dist-title {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.zone-bars {
+    height: 12px;
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.zone-bar {
+    height: 100%;
+}
+
+.zone-labels-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.zone-label-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.zone-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.zone-label-text {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+/* Zone Colors */
+.zone-bar.zone-1, .zone-dot.zone-1 { background-color: var(--zone-1); }
+.zone-bar.zone-2, .zone-dot.zone-2 { background-color: var(--zone-2); }
+.zone-bar.zone-3, .zone-dot.zone-3 { background-color: var(--zone-3); }
+.zone-bar.zone-4, .zone-dot.zone-4 { background-color: var(--zone-4); }
+.zone-bar.zone-5, .zone-dot.zone-5 { background-color: var(--zone-5); }
+.zone-bar.zone-6, .zone-dot.zone-6 { background-color: var(--zone-6); }
+.zone-bar.zone-7, .zone-dot.zone-7 { background-color: var(--zone-7); }
+
+.zone-bar.hr-zone-1, .zone-dot.hr-zone-1 { background-color: var(--hr-zone-1); }
+.zone-bar.hr-zone-2, .zone-dot.hr-zone-2 { background-color: var(--hr-zone-2); }
+.zone-bar.hr-zone-3, .zone-dot.hr-zone-3 { background-color: var(--hr-zone-3); }
+.zone-bar.hr-zone-4, .zone-dot.hr-zone-4 { background-color: var(--hr-zone-4); }
+.zone-bar.hr-zone-5, .zone-dot.hr-zone-5 { background-color: var(--hr-zone-5); }
+
 .hrv-badge {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
     border: 1px solid rgba(34, 197, 94, 0.2);

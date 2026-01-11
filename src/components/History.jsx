@@ -88,6 +88,50 @@ function History({ onBack }) {
                                     <span className="stat-value">{ride.summary.avgHr > 0 ? `${ride.summary.avgHr} bpm` : '--'}</span>
                                 </div>
                             </div>
+
+                            {/* Zone Distribution */}
+                            {(ride.summary.timeInPowerZones || ride.summary.timeInHrZones) && (
+                                <div className="history-zones">
+                                    {ride.summary.timeInPowerZones && (
+                                        <div className="zone-distribution">
+                                            <div className="zone-dist-title">Power Zones</div>
+                                            <div className="zone-bars">
+                                                {Object.entries(ride.summary.timeInPowerZones).map(([zone, time]) => {
+                                                    const percent = (time / ride.duration) * 100;
+                                                    if (percent < 1) return null;
+                                                    return (
+                                                        <div 
+                                                            key={zone} 
+                                                            className={`zone-bar zone-${zone}`} 
+                                                            style={{ width: `${percent}%` }}
+                                                            title={`Z${zone}: ${Math.round(percent)}%`}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {ride.summary.timeInHrZones && (
+                                        <div className="zone-distribution">
+                                            <div className="zone-dist-title">HR Zones</div>
+                                            <div className="zone-bars">
+                                                {Object.entries(ride.summary.timeInHrZones).map(([zone, time]) => {
+                                                    const percent = (time / ride.duration) * 100;
+                                                    if (percent < 1) return null;
+                                                    return (
+                                                        <div 
+                                                            key={zone} 
+                                                            className={`zone-bar hr-zone-${zone}`} 
+                                                            style={{ width: `${percent}%` }}
+                                                            title={`Z${zone}: ${Math.round(percent)}%`}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))
                 )}

@@ -1,3 +1,5 @@
+import { getPowerZone, getHRZone } from './zoneService';
+
 // Ride Recorder - Manages in-memory buffer of ride data
 
 class RideRecorder {
@@ -120,18 +122,18 @@ class RideRecorder {
     /**
      * Stop recording
      */
-    stopRecording() {
+    stopRecording(profile = null) {
         this.isRecording = false;
         this.isPaused = false;
         localStorage.removeItem('ride_in_progress');
 
-        return this.getRideData();
+        return this.getRideData(profile);
     }
 
     /**
      * Get complete ride data
      */
-    getRideData() {
+    getRideData(profile = null) {
         if (this.dataPoints.length === 0) {
             return null;
         }
@@ -157,6 +159,32 @@ class RideRecorder {
 
         const distance = this.lastDistance / 1000; // Convert to km
 
+        // Calculate time in zones if profile is provided
+        const timeInPowerZones = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+        const timeInHrZones = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+        if (profile) {
+            this.dataPoints.forEach((p, i) => {
+                // Calculate duration of this point (usually 1s)
+                let pointDuration = 1000;
+                if (i > 0) {
+                    pointDuration = p.timestamp - this.dataPoints[i-1].timestamp;
+                }
+                
+                const pZone = getPowerZone(p.power, profile.ftp);
+                if (pZone.zone > 0) {
+                    timeInPowerZones[pZone.zone] = (timeInPowerZones[pZone.zone] || 0) + pointDuration;
+                }
+
+                if (p.hr > 0) {
+                    const hZone = getHRZone(p.hr, profile.maxHr);
+                    if (hZone.zone > 0) {
+                        timeInHrZones[hZone.zone] = (timeInHrZones[hZone.zone] || 0) + pointDuration;
+                    }
+                }
+            });
+        }
+
         return {
             startTime: this.startTime,
             duration,
@@ -169,6 +197,8 @@ class RideRecorder {
                 maxPower,
                 maxHr,
                 distance,
+                timeInPowerZones: profile ? timeInPowerZones : undefined,
+                timeInHrZones: profile ? timeInHrZones : undefined,
             }
         };
     }
@@ -183,7 +213,7 @@ class RideRecorder {
             totalPausedDuration: this.totalPausedDuration,
             isPaused: this.isPaused,
             dataPoints: this.dataPoints.slice(-600), // Keep last 10 minutes max
-            rrIntervals: this.rrIntervals.slice(-3600), // Keep last hour of RR
+            rrIntervals: this.rrIntervals.slice(-20000), // Keep last ~3-5 hours of RR
         }));
     }
 

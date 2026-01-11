@@ -111,6 +111,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
             const result = await connectHRM({
                 onData: (data) => {
                     updateHRData(data);
+                    rideRecorder.addHRData(data);
                 }
             });
             updateHRMStatus('connected', result.name);
@@ -129,6 +130,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                     },
                     onHRMData: (data) => {
                         updateHRData(data);
+                        rideRecorder.addHRData(data);
                     },
                     onConnectionChange: (status) => {
                         updateTrainerStatus(status);
@@ -203,7 +205,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     const handleStopRide = useCallback(() => {
         stopRide();
         releaseWakeLock();
-        const rideData = rideRecorder.stopRecording();
+        const rideData = rideRecorder.stopRecording(latestState.current.profile);
 
         if (rideData && rideData.dataPoints.length > 0) {
             // Save to local history

@@ -86,6 +86,55 @@
     color: var(--primary-color);
 }
 
+.history-zones {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.zone-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.zone-dist-title {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.zone-bars {
+    height: 8px;
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.zone-bar {
+    height: 100%;
+}
+
+/* Zone Colors */
+.zone-bar.zone-1 { background-color: var(--zone-1); }
+.zone-bar.zone-2 { background-color: var(--zone-2); }
+.zone-bar.zone-3 { background-color: var(--zone-3); }
+.zone-bar.zone-4 { background-color: var(--zone-4); }
+.zone-bar.zone-5 { background-color: var(--zone-5); }
+.zone-bar.zone-6 { background-color: var(--zone-6); }
+.zone-bar.zone-7 { background-color: var(--zone-7); }
+
+.zone-bar.hr-zone-1 { background-color: var(--hr-zone-1); }
+.zone-bar.hr-zone-2 { background-color: var(--hr-zone-2); }
+.zone-bar.hr-zone-3 { background-color: var(--hr-zone-3); }
+.zone-bar.hr-zone-4 { background-color: var(--hr-zone-4); }
+.zone-bar.hr-zone-5 { background-color: var(--hr-zone-5); }
+
 .empty-history {
     display: flex;
     flex-direction: column;

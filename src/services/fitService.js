@@ -111,7 +111,9 @@ export function generateFitFile(rideData, profile) {
 
         // Optional: HRV messages
         if (rideData.rrIntervals && rideData.rrIntervals.length > 0) {
-            // Group RR intervals by timestamp
+            // Group RR intervals by timestamp to reduce message count
+            // Note: HRV messages in FIT don't have a timestamp field, 
+            // they are just a stream of RR intervals.
             const rrMap = new Map();
             rideData.rrIntervals.forEach(rr => {
                 const key = rr.timestamp;
@@ -119,10 +121,9 @@ export function generateFitFile(rideData, profile) {
                 rrMap.get(key).push(rr.rr);
             });
 
-            for (const [timestamp, rrValues] of rrMap.entries()) {
+            for (const [_, rrValues] of rrMap.entries()) {
                 fitWriter.writeMessage('hrv', {
-                    timestamp: fitWriter.time(new Date(timestamp)),
-                    time: rrValues.map(v => Math.round(v)) // library scale is 1000 (ms to s)
+                    time: rrValues.map(v => v / 1000) // Convert ms to seconds, library scales to 1000
                 });
             }
         }

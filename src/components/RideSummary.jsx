@@ -97,6 +97,75 @@ const RideSummary = memo(function RideSummary({ rideData, profile, onClose }) {
                         )}
                     </div>
 
+                    {/* Zone Distribution */}
+                    {(rideData.summary.timeInPowerZones || rideData.summary.timeInHrZones) && (
+                        <div className="summary-zones">
+                            {rideData.summary.timeInPowerZones && (
+                                <div className="zone-distribution">
+                                    <div className="zone-dist-title">Power Zone Distribution</div>
+                                    <div className="zone-bars">
+                                        {Object.entries(rideData.summary.timeInPowerZones).map(([zone, time]) => {
+                                            const percent = (time / rideData.duration) * 100;
+                                            if (percent < 1) return null;
+                                            return (
+                                                <div 
+                                                    key={zone} 
+                                                    className={`zone-bar zone-${zone}`} 
+                                                    style={{ width: `${percent}%` }}
+                                                    title={`Z${zone}: ${Math.round(percent)}%`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="zone-labels-grid">
+                                        {Object.entries(rideData.summary.timeInPowerZones).map(([zone, time]) => {
+                                            const percent = (time / rideData.duration) * 100;
+                                            if (percent < 2) return null;
+                                            return (
+                                                <div key={zone} className="zone-label-item">
+                                                    <span className={`zone-dot zone-${zone}`}></span>
+                                                    <span className="zone-label-text">Z{zone}: {Math.round(percent)}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {rideData.summary.timeInHrZones && (
+                                <div className="zone-distribution">
+                                    <div className="zone-dist-title">HR Zone Distribution</div>
+                                    <div className="zone-bars">
+                                        {Object.entries(rideData.summary.timeInHrZones).map(([zone, time]) => {
+                                            const percent = (time / rideData.duration) * 100;
+                                            if (percent < 1) return null;
+                                            return (
+                                                <div 
+                                                    key={zone} 
+                                                    className={`zone-bar hr-zone-${zone}`} 
+                                                    style={{ width: `${percent}%` }}
+                                                    title={`Z${zone}: ${Math.round(percent)}%`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="zone-labels-grid">
+                                        {Object.entries(rideData.summary.timeInHrZones).map(([zone, time]) => {
+                                            const percent = (time / rideData.duration) * 100;
+                                            if (percent < 2) return null;
+                                            return (
+                                                <div key={zone} className="zone-label-item">
+                                                    <span className={`zone-dot hr-zone-${zone}`}></span>
+                                                    <span className="zone-label-text">Z{zone}: {Math.round(percent)}%</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* HRV Data Badge */}
                     {hasRRData && (
                         <div className="hrv-badge">
