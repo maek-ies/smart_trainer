@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import WorkoutIntervalsList from './WorkoutIntervalsList';
 import HeadUnitDisplay from './HeadUnitDisplay';
 import PowerChart from './PowerChart';
