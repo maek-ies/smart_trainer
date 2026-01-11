@@ -15,7 +15,9 @@ const PlannedWorkoutMode = ({
     onComplete,
     onManualExit,
     onConnectTrainer,
-    onConnectHRM
+    onConnectHRM,
+    onToggleRide,
+    onStopRide
 }) => {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [stepElapsedSeconds, setStepElapsedSeconds] = useState(0);
@@ -34,6 +36,15 @@ const PlannedWorkoutMode = ({
         const s = seconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
     };
+
+    const skipStep = useCallback(() => {
+        if (currentStepIndex < steps.length - 1) {
+            setCurrentStepIndex(i => i + 1);
+            setStepElapsedSeconds(0);
+        } else {
+            onComplete?.();
+        }
+    }, [currentStepIndex, steps.length, onComplete]);
 
     // Timer logic
     useEffect(() => {
@@ -138,8 +149,23 @@ const PlannedWorkoutMode = ({
                     />
                 </div>
 
-                {/* Right Panel: Charts */}
+                {/* Right Panel: Charts & Controls */}
                 <div className="rhs-panel-charts">
+                    <div className="workout-controls-overlay">
+                        <button
+                            className={`btn btn-large ${state.isPaused || !state.isRiding ? 'btn-start' : 'btn-secondary'}`}
+                            onClick={onToggleRide}
+                        >
+                            {state.isPaused || !state.isRiding ? '▶' : '⏸'}
+                        </button>
+                        <button className="btn btn-large btn-stop" onClick={onStopRide}>
+                            ⏹
+                        </button>
+                        <button className="btn btn-large btn-secondary" onClick={skipStep} title="Skip Step">
+                            ⏭
+                        </button>
+                    </div>
+
                     <div className="mini-chart">
                         <PowerChart
                             data={rideRecorder.getRecentData(120)}

@@ -522,6 +522,8 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                     onManualExit={() => setIsPlannedWorkoutActive(false)}
                     onConnectTrainer={handleConnectTrainer}
                     onConnectHRM={handleConnectHRM}
+                    onToggleRide={toggleRide}
+                    onStopRide={handleStopRide}
                 />
             )}
         </div>
