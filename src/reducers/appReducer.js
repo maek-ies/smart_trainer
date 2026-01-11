@@ -45,7 +45,11 @@ export const ActionTypes = {
 export function appReducer(state, action) {
     switch (action.type) {
         case ActionTypes.SET_PROFILE:
-            return { ...state, profile: action.payload };
+            return { 
+                ...state, 
+                profile: action.payload,
+                targetPower: action.payload ? Math.round(action.payload.ftp * 0.5) : state.targetPower
+            };
 
         case ActionTypes.UPDATE_TRAINER_STATUS:
             return {

@@ -10,6 +10,7 @@ import {
 import { getPowerZone, getHRZone } from '../services/zoneService';
 import { requestWakeLock, releaseWakeLock, setupWakeLockReacquisition } from '../utils/wakeLock';
 import rideRecorder from '../services/rideRecorder';
+import { saveRideToHistory } from '../services/rideHistoryService';
 import { fetchTodayWorkout } from '../services/intervalsService';
 import PowerChart from './PowerChart';
 import HRChart from './HRChart';
@@ -42,7 +43,7 @@ const MetricSmall = memo(function MetricSmall({ value, label, unit = '' }) {
     );
 });
 
-function Dashboard({ onSwitchProfile }) {
+function Dashboard({ onSwitchProfile, onShowHistory }) {
     const {
         state,
         updateTrainerStatus,
@@ -205,6 +206,9 @@ function Dashboard({ onSwitchProfile }) {
         const rideData = rideRecorder.stopRecording();
 
         if (rideData && rideData.dataPoints.length > 0) {
+            // Save to local history
+            saveRideToHistory(rideData);
+            
             // Show ride summary modal
             console.log('Ride completed:', rideData.summary);
             setCompletedRide(rideData);
@@ -269,8 +273,11 @@ function Dashboard({ onSwitchProfile }) {
             {/* Header */}
             <header className="dashboard-header compact">
                 <div className="header-left">
-                    <button className="btn btn-icon" onClick={onSwitchProfile}>
+                    <button className="btn btn-icon" onClick={onSwitchProfile} title="Switch Profile">
                         👤
+                    </button>
+                    <button className="btn btn-icon" onClick={onShowHistory} title="Ride History">
+                        📜
                     </button>
                     <h3 className="header-title">{state.profile?.name || 'Rider'}</h3>
                 </div>

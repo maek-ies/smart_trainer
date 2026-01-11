@@ -3,6 +3,7 @@ import { AppProvider } from './contexts/AppContext';
 import { getActiveProfile } from './services/profileService';
 import ProfileSelection from './components/ProfileSelection';
 import Dashboard from './components/Dashboard';
+import History from './components/History';
 import './index.css';
 
 function App() {
@@ -16,6 +17,14 @@ function App() {
 
   const handleSwitchProfile = () => {
     setCurrentView('profile-selection');
+  };
+
+  const handleShowHistory = () => {
+    setCurrentView('history');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
   };
 
   if (currentView === 'loading') {
@@ -32,7 +41,13 @@ function App() {
         <ProfileSelection onProfileSelected={handleProfileSelected} />
       )}
       {currentView === 'dashboard' && (
-        <Dashboard onSwitchProfile={handleSwitchProfile} />
+        <Dashboard 
+          onSwitchProfile={handleSwitchProfile} 
+          onShowHistory={handleShowHistory}
+        />
+      )}
+      {currentView === 'history' && (
+        <History onBack={handleBackToDashboard} />
       )}
     </AppProvider>
   );
