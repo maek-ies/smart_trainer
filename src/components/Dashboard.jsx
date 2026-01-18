@@ -11,13 +11,14 @@ import { getPowerZone, getHRZone } from '../services/zoneService';
 import { requestWakeLock, releaseWakeLock, setupWakeLockReacquisition } from '../utils/wakeLock';
 import rideRecorder from '../services/rideRecorder';
 import { saveRideToHistory } from '../services/rideHistoryService';
-import { fetchTodayWorkout } from '../services/intervalsService';
+import { fetchTodayWorkout, fetchAthleteSummary } from '../services/intervalsService';
 import { VO2MAX_TEST_WORKOUT } from '../services/workoutService';
 import PowerChart from './PowerChart';
 import HRChart from './HRChart';
 import RideSummary from './RideSummary';
 import WorkoutPlayer from './WorkoutPlayer';
 import PlannedWorkoutMode from './PlannedWorkoutMode';
+import IntervalsSummary from './IntervalsSummary';
 import './Dashboard.css';
 
 // Memoized metric display
@@ -76,6 +77,11 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     const [workoutError, setWorkoutError] = useState(null);
     const [isLoadingWorkout, setIsLoadingWorkout] = useState(false);
     const [cyclingSeconds, setCyclingSeconds] = useState(0); // Track consecutive seconds of cycling
+    const [showIntervalsSummary, setShowIntervalsSummary] = useState(false);
+    const [intervalsSummaryData, setIntervalsSummaryData] = useState(null);
+    const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+
+    // Format time as MM:SS or HH:MM:SS
 
     // Format time as MM:SS or HH:MM:SS
     const formatTime = (seconds) => {
@@ -124,6 +130,25 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
             updateHRMStatus('connected', result.name);
         } catch (err) {
             console.error('Failed to connect HRM:', err);
+        }
+    };
+
+    // Handle showing Intervals.icu summary
+    const handleShowIntervalsSummary = async () => {
+        if (!state.profile?.intervalsApiKey) {
+            alert("Please configure your Intervals.icu API Key in profile settings.");
+            return;
+        }
+
+        setIsLoadingSummary(true);
+        const data = await fetchAthleteSummary(state.profile);
+        setIsLoadingSummary(false);
+
+        if (data.error) {
+            alert(`Failed to fetch summary: ${data.error}`);
+        } else {
+            setIntervalsSummaryData(data);
+            setShowIntervalsSummary(true);
         }
     };
 
@@ -347,6 +372,11 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                     <button className="btn btn-icon btn-profile-name" onClick={onSwitchProfile} title="Switch Profile">
                         👤 {state.profile?.name || 'Rider'}
                     </button>
+                    {state.profile?.intervalsApiKey && (
+                        <button className="btn btn-icon" onClick={handleShowIntervalsSummary} title="Check Intervals.icu Connection" style={{ fontSize: '0.8rem', marginLeft: '4px' }}>
+                            ✅
+                        </button>
+                    )}
                     <button className="btn btn-icon" onClick={onShowHistory} title="Ride History">
                         📜
                     </button>
@@ -559,39 +589,62 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                 </section>
             </main>
 
+            {/* Intervals Summary Modal */}
+            {
+                showIntervalsSummary && (
+                    <IntervalsSummary
+                        data={intervalsSummaryData}
+                        onClose={() => setShowIntervalsSummary(false)}
+                    />
+                )
+            }
+
+            {/* Spinner for manual fetch */}
+            {
+                isLoadingSummary && (
+                    <div className="spinner-overlay">
+                        <div className="spinner"></div>
+                    </div>
+                )
+            }
+
             {/* Ride Summary Modal */}
-            {completedRide && (
-                <RideSummary
-                    rideData={completedRide}
-                    profile={state.profile}
-                    onClose={() => setCompletedRide(null)}
-                />
-            )}
+            {
+                completedRide && (
+                    <RideSummary
+                        rideData={completedRide}
+                        profile={state.profile}
+                        onClose={() => setCompletedRide(null)}
+                    />
+                )
+            }
 
             {/* Planned Workout Mode Overlay */}
-            {isPlannedWorkoutActive && (
-                <PlannedWorkoutMode
-                    workout={VO2MAX_TEST_WORKOUT}
-                    state={state}
-                    onTargetPowerChange={(power) => {
-                        if (state.trainerStatus === 'connected') {
-                            setTargetPower(power);
-                            btSetTargetPower(power);
-                        }
-                    }}
-                    onComplete={() => {
-                        console.log('Planned Workout complete!');
-                        handleStopRide();
-                        setIsPlannedWorkoutActive(false);
-                    }}
-                    onManualExit={() => setIsPlannedWorkoutActive(false)}
-                    onConnectTrainer={handleConnectTrainer}
-                    onConnectHRM={handleConnectHRM}
-                    onToggleRide={toggleRide}
-                    onStopRide={handleStopRide}
-                />
-            )}
-        </div>
+            {
+                isPlannedWorkoutActive && (
+                    <PlannedWorkoutMode
+                        workout={VO2MAX_TEST_WORKOUT}
+                        state={state}
+                        onTargetPowerChange={(power) => {
+                            if (state.trainerStatus === 'connected') {
+                                setTargetPower(power);
+                                btSetTargetPower(power);
+                            }
+                        }}
+                        onComplete={() => {
+                            console.log('Planned Workout complete!');
+                            handleStopRide();
+                            setIsPlannedWorkoutActive(false);
+                        }}
+                        onManualExit={() => setIsPlannedWorkoutActive(false)}
+                        onConnectTrainer={handleConnectTrainer}
+                        onConnectHRM={handleConnectHRM}
+                        onToggleRide={toggleRide}
+                        onStopRide={handleStopRide}
+                    />
+                )
+            }
+        </div >
     );
 }
 

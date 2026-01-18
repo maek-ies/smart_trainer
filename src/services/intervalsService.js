@@ -178,3 +178,63 @@ export async function uploadActivity(fitBlob, filename, profile) {
 export function isIntervalsConfigured(profile) {
     return !!(profile?.intervalsApiKey && profile?.intervalsAthleteId);
 }
+
+/**
+ * Fetch athlete profile and recent summary stats
+ * @param {Object} profile - User profile
+ * @returns {Promise<Object>} Combined athlete and summary data
+ */
+export async function fetchAthleteSummary(profile) {
+    if (!profile?.intervalsApiKey || !profile?.intervalsAthleteId) {
+        return { error: 'Intervals.icu credentials not configured' };
+    }
+
+    try {
+        const headers = {
+            Authorization: getAuthHeader(profile.intervalsApiKey),
+            Accept: 'application/json',
+        };
+
+        // 1. Fetch Athlete Settings (FTP, HR, etc.)
+        const athleteRes = await fetch(`${API_BASE}/athlete/0`, { headers });
+        if (!athleteRes.ok) {
+            throw new Error(`Failed to fetch athlete data: ${athleteRes.status}`);
+        }
+        const athlete = await athleteRes.json();
+
+        // 2. Fetch recent summary (last 42 days for charts, but we verify connection mostly)
+        // We'll just ask for the last few days to get current fitness/fatigue
+        const today = new Date().toISOString().split('T')[0];
+        // 7 days ago
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const summaryUrl = `${API_BASE}/athlete/0/athlete-summary?start=${weekAgo}&end=${today}`;
+        const summaryRes = await fetch(summaryUrl, { headers });
+
+        let recentSummary = null;
+        if (summaryRes.ok) {
+            const summaryData = await summaryRes.json();
+            // Get the last entry (today or most recent)
+            if (summaryData.length > 0) {
+                recentSummary = summaryData[summaryData.length - 1];
+            }
+        }
+
+        return {
+            id: athlete.id,
+            name: `${athlete.firstname} ${athlete.lastname}`,
+            ftp: athlete.ftp,
+            weight: athlete.weight,
+            maxHr: athlete.icu_max_hr || athlete.max_hr,
+            restingHr: athlete.icu_resting_hr || athlete.resting_hr,
+            fitness: recentSummary?.ctl || 0, // CTL = Fitness
+            fatigue: recentSummary?.atl || 0, // ATL = Fatigue
+            form: recentSummary?.tsb || 0,    // TSB = Form
+            load: recentSummary?.load || 0
+        };
+
+    } catch (error) {
+        console.error('Error fetching summary:', error);
+        return { error: error.message };
+    }
+}
