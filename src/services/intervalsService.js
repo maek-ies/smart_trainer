@@ -203,6 +203,16 @@ export async function fetchAthleteSummary(profile) {
         const athlete = await athleteRes.json();
         console.log('[Intervals] Athlete Data:', athlete);
 
+        // Extract FTP from sportSettings (usually the first one or specific to Ride)
+        // sportSettings is an array of objects like { types: ['Ride'], ftp: 200, ... }
+        let ftp = athlete.ftp;
+        if (!ftp && athlete.sportSettings) {
+            const rideSettings = athlete.sportSettings.find(s => s.types && (s.types.includes('Ride') || s.types.includes('VirtualRide')));
+            if (rideSettings) {
+                ftp = rideSettings.ftp;
+            }
+        }
+
         // 2. Fetch recent summary (last 42 days for charts, but we verify connection mostly)
         // We'll just ask for the last few days to get current fitness/fatigue
         const today = new Date().toISOString().split('T')[0];
@@ -225,14 +235,14 @@ export async function fetchAthleteSummary(profile) {
         return {
             id: athlete.id,
             name: `${athlete.firstname} ${athlete.lastname}`,
-            ftp: athlete.ftp,
-            weight: athlete.weight,
+            ftp: ftp, // Use extracted FTP
+            weight: athlete.weight || athlete.icu_weight, // Fallback to icu_weight
             maxHr: athlete.icu_max_hr || athlete.max_hr,
             restingHr: athlete.icu_resting_hr || athlete.resting_hr,
-            fitness: recentSummary?.ctl || 0, // CTL = Fitness
-            fatigue: recentSummary?.atl || 0, // ATL = Fatigue
-            form: recentSummary?.tsb || 0,    // TSB = Form
-            load: recentSummary?.load || 0
+            fitness: recentSummary?.fitness || recentSummary?.ctl || 0, // Fitness key seems to be 'fitness' in summary
+            fatigue: recentSummary?.fatigue || recentSummary?.atl || 0, // Fatigue key seems to be 'fatigue'
+            form: recentSummary?.form || recentSummary?.tsb || 0,    // Form key seems to be 'form'
+            load: recentSummary?.training_load || recentSummary?.load || 0 // load key is 'training_load'
         };
 
     } catch (error) {
