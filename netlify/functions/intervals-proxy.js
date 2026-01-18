@@ -31,13 +31,21 @@ export default async (req, context) => {
 
         console.log(`[Proxy] Response status: ${response.status}`);
 
+        // Create a new Headers object for the response
+        const responseHeaders = new Headers(response.headers);
+
+        // Remove headers that might cause issues if forwarded directly
+        // node-fetch/native fetch usually decompresses the body, so forwarding content-encoding: gzip is bad
+        responseHeaders.delete("content-encoding");
+        responseHeaders.delete("content-length");
+        responseHeaders.delete("transfer-encoding");
+
         // Forward the response back to the client
         return new Response(response.body, {
             status: response.status,
             statusText: response.statusText,
-            headers: response.headers,
+            headers: responseHeaders,
         });
-
     } catch (error) {
         console.error("[Proxy] Error:", error);
         return new Response(JSON.stringify({ error: "Proxy Error", details: error.message }), {
