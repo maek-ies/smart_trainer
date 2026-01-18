@@ -31,8 +31,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['vite.svg', 'mask-icon.svg'],
       manifest: {
-        name: 'Smart Trainer Controller',
-        short_name: 'TrainerCtrl',
+        name: 'smart_trainer',
+        short_name: 'smart_trainer',
         description: 'Control your smart trainer in ERG mode via Bluetooth',
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
