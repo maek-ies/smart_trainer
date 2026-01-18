@@ -60,7 +60,7 @@ class RideRecorder {
 
         const now = data.timestamp || Date.now();
         const elapsed = now - this.startTime - this.totalPausedDuration;
-        
+
         // Calculate time delta from last point for distance approximation
         let timeDelta = 0;
         if (this.dataPoints.length > 0) {
@@ -69,9 +69,9 @@ class RideRecorder {
 
         // Handle distance: use trainer data if available and increasing, otherwise calculate from speed
         let currentDistance = this.lastDistance;
-        
+
         if (data.distance && data.distance > this.lastDistance) {
-             currentDistance = data.distance;
+            currentDistance = data.distance;
         } else if (data.speed > 0 && timeDelta > 0) {
             // Speed is km/h, convert to m/s: speed / 3.6
             // Distance = speed * time
@@ -168,9 +168,9 @@ class RideRecorder {
                 // Calculate duration of this point (usually 1s)
                 let pointDuration = 1000;
                 if (i > 0) {
-                    pointDuration = p.timestamp - this.dataPoints[i-1].timestamp;
+                    pointDuration = p.timestamp - this.dataPoints[i - 1].timestamp;
                 }
-                
+
                 const pZone = getPowerZone(p.power, profile.ftp);
                 if (pZone.zone > 0) {
                     timeInPowerZones[pZone.zone] = (timeInPowerZones[pZone.zone] || 0) + pointDuration;
@@ -242,6 +242,13 @@ class RideRecorder {
     }
 
     /**
+     * Get all data points for the current session
+     */
+    getFullSessionData() {
+        return this.dataPoints;
+    }
+
+    /**
      * Get recent data for charts (last N seconds)
      */
     getRecentData(seconds = 120) {
@@ -258,7 +265,7 @@ class RideRecorder {
      */
     getElapsedSeconds() {
         if (!this.startTime) return 0;
-        
+
         let currentPauseDuration = 0;
         if (this.isPaused && this.pauseStartTime) {
             currentPauseDuration = Date.now() - this.pauseStartTime;

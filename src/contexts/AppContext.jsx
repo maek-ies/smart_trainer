@@ -83,6 +83,9 @@ export function AppProvider({ children }) {
         updateElapsed: useCallback((seconds) => {
             dispatch({ type: ActionTypes.UPDATE_ELAPSED, payload: seconds });
         }, []),
+        updateDistance: useCallback((meters) => {
+            dispatch({ type: ActionTypes.UPDATE_DISTANCE, payload: meters });
+        }, []),
     };
 
     return (

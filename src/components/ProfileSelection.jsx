@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getProfiles, saveProfile, setActiveProfile, createDefaultProfile } from '../services/profileService';
+import { getProfiles, saveProfile, setActiveProfile, createDefaultProfile, deleteProfile } from '../services/profileService';
 import { useApp } from '../contexts/AppContext';
 import './ProfileSelection.css';
 
@@ -48,6 +48,26 @@ function ProfileSelection({ onProfileSelected }) {
 
     const handleCancelEdit = () => {
         setEditingProfile(null);
+    };
+
+    const handleDeleteProfile = () => {
+        if (!editingProfile) return;
+
+        // Prevent deletion of last profile
+        if (profiles.length <= 1) {
+            alert('Cannot delete the last profile. Create another profile first.');
+            return;
+        }
+
+        const confirmMsg = `Are you sure you want to delete the profile "${editingProfile.name}"? This action cannot be undone.`;
+        if (!window.confirm(confirmMsg)) return;
+
+        deleteProfile(editingProfile.id);
+        setProfiles(getProfiles());
+        setEditingProfile(null);
+
+        // If we deleted the active profile, the user will need to select another
+        // (profileService already handles clearing active profile)
     };
 
     const updateEditingField = (field, value) => {
@@ -178,6 +198,21 @@ function ProfileSelection({ onProfileSelected }) {
                                 </div>
                             </div>
 
+                            <div className="form-group">
+                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={editingProfile.autoStartRide || false}
+                                        onChange={(e) => updateEditingField('autoStartRide', e.target.checked)}
+                                        style={{ width: 'auto', margin: 0 }}
+                                    />
+                                    Auto-start ride when cycling detected
+                                </label>
+                                <p className="text-muted form-hint" style={{ marginTop: '4px', fontSize: '12px' }}>
+                                    Automatically starts recording after 5 seconds of pedaling
+                                </p>
+                            </div>
+
                             <div className="form-section">
                                 <h3>📊 Intervals.icu Integration</h3>
                                 <p className="text-muted form-hint">
@@ -209,6 +244,15 @@ function ProfileSelection({ onProfileSelected }) {
                         </div>
 
                         <div className="edit-profile-actions">
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDeleteProfile}
+                                disabled={profiles.length <= 1}
+                                title={profiles.length <= 1 ? "Cannot delete last profile" : "Delete profile"}
+                            >
+                                🗑️ Delete
+                            </button>
+                            <div style={{ flex: 1 }} />
                             <button className="btn btn-secondary" onClick={handleCancelEdit}>
                                 Cancel
                             </button>

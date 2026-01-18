@@ -173,13 +173,13 @@ const PlannedWorkoutMode = ({
 
                     <div className="mini-chart">
                         <PowerChart
-                            data={rideRecorder.getRecentData(120)}
+                            data={rideRecorder.getFullSessionData()}
                             ftp={state.profile?.ftp || 200}
                         />
                     </div>
                     <div className="mini-chart">
                         <HRChart
-                            data={rideRecorder.getRecentData(120)}
+                            data={rideRecorder.getFullSessionData()}
                             maxHr={state.profile?.maxHr || 180}
                         />
                     </div>

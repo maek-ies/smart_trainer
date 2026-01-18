@@ -58,6 +58,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
         resumeRide,
         stopRide,
         updateElapsed,
+        updateDistance
     } = useApp();
 
     const timerRef = useRef(null);
@@ -72,6 +73,9 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     const [todaysWorkout, setTodaysWorkout] = useState(null);
     const [showWorkoutPlayer, setShowWorkoutPlayer] = useState(false);
     const [isPlannedWorkoutActive, setIsPlannedWorkoutActive] = useState(false);
+    const [workoutError, setWorkoutError] = useState(null);
+    const [isLoadingWorkout, setIsLoadingWorkout] = useState(false);
+    const [cyclingSeconds, setCyclingSeconds] = useState(0); // Track consecutive seconds of cycling
 
     // Format time as MM:SS or HH:MM:SS
     const formatTime = (seconds) => {
@@ -157,14 +161,32 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
     useEffect(() => {
         const loadWorkout = async () => {
             if (state.profile?.intervalsApiKey) {
-                const workout = await fetchTodayWorkout(state.profile);
-                setTodaysWorkout(workout);
-                if (workout) {
+                setIsLoadingWorkout(true);
+                setWorkoutError(null);
+                const result = await fetchTodayWorkout(state.profile);
+                setIsLoadingWorkout(false);
+
+                if (result?.error) {
+                    // Result is an error object
+                    setWorkoutError(result.error);
+                    setTodaysWorkout(null);
+                    setShowWorkoutPlayer(false);
+                } else if (result) {
+                    // Result is a workout
+                    setTodaysWorkout(result);
+                    setWorkoutError(null);
                     setShowWorkoutPlayer(true);
+                } else {
+                    // No workout today
+                    setTodaysWorkout(null);
+                    setWorkoutError(null);
+                    setShowWorkoutPlayer(false);
                 }
             } else {
                 setTodaysWorkout(null);
+                setWorkoutError(null);
                 setShowWorkoutPlayer(false);
+                setIsLoadingWorkout(false);
             }
         };
         loadWorkout();
@@ -220,8 +242,8 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
         const rideData = rideRecorder.stopRecording(latestState.current.profile);
 
         if (rideData && rideData.dataPoints.length > 0) {
-            // Save to local history
-            saveRideToHistory(rideData);
+            // Save to local history with profileId
+            saveRideToHistory(rideData, latestState.current.profile?.id);
 
             // Show ride summary modal
             console.log('Ride completed:', rideData.summary);
@@ -246,6 +268,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                 });
 
                 updateElapsed(rideRecorder.getElapsedSeconds());
+                updateDistance(rideRecorder.lastDistance);
             }, 1000);
         } else {
             if (timerRef.current) {
@@ -265,6 +288,40 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
         const cleanup = setupWakeLockReacquisition();
         return cleanup;
     }, []);
+
+    // Auto-start ride detection
+    const cyclingStartTimeRef = useRef(null);
+
+    useEffect(() => {
+        // Only monitor if: not riding, trainer connected, and auto-start is enabled
+        if (state.isRiding || state.trainerStatus !== 'connected' || !state.profile?.autoStartRide) {
+            cyclingStartTimeRef.current = null;
+            setCyclingSeconds(0);
+            return;
+        }
+
+        // Check if user is cycling (power > 20W to avoid false triggers from noise)
+        const isCycling = state.power > 20;
+
+        if (isCycling) {
+            if (!cyclingStartTimeRef.current) {
+                cyclingStartTimeRef.current = Date.now();
+            }
+
+            const elapsed = Math.floor((Date.now() - cyclingStartTimeRef.current) / 1000);
+            setCyclingSeconds(elapsed);
+
+            if (elapsed >= 5) {
+                console.log('Auto-starting ride after 5 seconds of cycling');
+                toggleRide();
+                cyclingStartTimeRef.current = null;
+                setCyclingSeconds(0);
+            }
+        } else {
+            cyclingStartTimeRef.current = null;
+            setCyclingSeconds(0);
+        }
+    }, [state.power, state.isRiding, state.trainerStatus, state.profile?.autoStartRide, toggleRide]);
 
     // Get zone info
     const powerZone = getPowerZone(state.power, state.profile?.ftp);
@@ -294,13 +351,21 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                         📜
                     </button>
                     {!state.isRiding && (
-                        <button
-                            className="btn btn-intervals btn-small"
-                            onClick={() => setIsPlannedWorkoutActive(true)}
-                            style={{ marginLeft: '8px', marginRight: '8px' }}
-                        >
-                            🚀 Planned Workout
-                        </button>
+                        <>
+                            <button
+                                className="btn btn-intervals btn-small"
+                                onClick={() => setIsPlannedWorkoutActive(true)}
+                                style={{ marginLeft: '8px', marginRight: '8px' }}
+                            >
+                                🚀 Planned Workout
+                            </button>
+                            {isLoadingWorkout && (
+                                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>⌛ Loading...</span>
+                            )}
+                            {workoutError && (
+                                <span style={{ fontSize: '10px', color: 'var(--color-danger)', maxWidth: '200px' }} title={workoutError}>⚠️ {workoutError}</span>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -452,7 +517,7 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                     />
                     <Metric
                         value={state.hr || '--'}
-                        label={state.hr ? `Z${hrZone.zone}` : 'HR'}
+                        label={state.hr ? `HR Z${hrZone.zone}` : 'HR'}
                         className="metric-hr"
                         color={state.hr ? hrZone.color : undefined}
                     />
@@ -467,13 +532,13 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                 <section className="charts-section">
                     <div className="chart-container">
                         <PowerChart
-                            data={rideRecorder.getRecentData(120)}
+                            data={rideRecorder.getFullSessionData()}
                             ftp={state.profile?.ftp || 200}
                         />
                     </div>
                     <div className="chart-container">
                         <HRChart
-                            data={rideRecorder.getRecentData(120)}
+                            data={rideRecorder.getFullSessionData()}
                             maxHr={state.profile?.maxHr || 180}
                         />
                     </div>

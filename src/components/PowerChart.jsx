@@ -78,9 +78,14 @@ const PowerChart = memo(function PowerChart({ data, ftp }) {
 
                 <XAxis
                     dataKey="time"
-                    tick={false}
+                    tick={{ fill: 'var(--color-text-muted)', fontSize: 9, fontWeight: 500 }}
                     axisLine={false}
                     tickLine={false}
+                    tickFormatter={(seconds) => {
+                        const m = Math.floor(seconds / 60);
+                        const s = seconds % 60;
+                        return `${m}:${s.toString().padStart(2, '0')}`;
+                    }}
                 />
 
                 <YAxis

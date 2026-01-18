@@ -122,8 +122,10 @@ export function generateFitFile(rideData, profile) {
             });
 
             for (const [_, rrValues] of rrMap.entries()) {
+                // The 'time' field expects uint16 array in milliseconds
+                // The library expects the values as-is (already in ms)
                 fitWriter.writeMessage('hrv', {
-                    time: rrValues.map(v => v / 1000) // Convert ms to seconds, library scales to 1000
+                    time: rrValues // RR intervals already in milliseconds
                 });
             }
         }

@@ -17,35 +17,57 @@ export function getRideHistory() {
 
 /**
  * Save a new ride to history
+ * @param {Object} rideData - Ride data with summary and dataPoints
+ * @param {string} profileId - The profile ID who completed the ride
  */
-export function saveRideToHistory(rideData) {
+export function saveRideToHistory(rideData, profileId = null) {
     if (!rideData) return;
 
     try {
         const history = getRideHistory();
-        
-        // Prepare a summary for history (don't save thousands of data points to keep localStorage clean)
-        // You might want to save full data points if you plan to show detailed charts later,
-        // but for now, we'll save summary + condensed data if needed.
+
+        // Store full ride data for FIT file generation
         const historyEntry = {
             id: crypto.randomUUID(),
+            profileId: profileId || rideData.profileId || null, // Store which profile completed this ride
             startTime: rideData.startTime,
             duration: rideData.duration,
             summary: rideData.summary,
-            // Optionally store a downsampled version of dataPoints for history charts
-            // dataPoints: downsample(rideData.dataPoints, 100), 
+            // Store full data for FIT export (we'll limit history size to manage storage)
+            dataPoints: rideData.dataPoints,
+            rrIntervals: rideData.rrIntervals,
         };
 
         history.unshift(historyEntry); // Add to beginning
-        
-        // Limit history to last 50 rides
-        const limitedHistory = history.slice(0, 50);
-        
+
+        // Limit history to last 30 rides to manage localStorage size
+        const limitedHistory = history.slice(0, 30);
+
         localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(limitedHistory));
         return historyEntry;
     } catch (e) {
         console.error('Error saving ride to history:', e);
+        // If storage is full, try limiting to 20 rides
+        if (e.name === 'QuotaExceededError') {
+            try {
+                const history = getRideHistory().slice(0, 19);
+                localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(history));
+                console.warn('Reduced history size due to storage constraints');
+            } catch (e2) {
+                console.error('Failed to save even after reducing history:', e2);
+            }
+        }
     }
+}
+
+/**
+ * Get ride history for a specific profile
+ * @param {string} profileId - The profile ID to filter by
+ */
+export function getRideHistoryForProfile(profileId) {
+    if (!profileId) return [];
+    const allHistory = getRideHistory();
+    return allHistory.filter(ride => ride.profileId === profileId);
 }
 
 /**

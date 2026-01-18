@@ -39,14 +39,15 @@ export const ActionTypes = {
     RESUME_RIDE: 'RESUME_RIDE',
     STOP_RIDE: 'STOP_RIDE',
     UPDATE_ELAPSED: 'UPDATE_ELAPSED',
+    UPDATE_DISTANCE: 'UPDATE_DISTANCE',
     SET_OFFLINE: 'SET_OFFLINE',
 };
 
 export function appReducer(state, action) {
     switch (action.type) {
         case ActionTypes.SET_PROFILE:
-            return { 
-                ...state, 
+            return {
+                ...state,
                 profile: action.payload,
                 targetPower: action.payload ? Math.round(action.payload.ftp * 0.5) : state.targetPower
             };
@@ -97,6 +98,9 @@ export function appReducer(state, action) {
 
         case ActionTypes.UPDATE_ELAPSED:
             return { ...state, elapsedSeconds: action.payload };
+
+        case ActionTypes.UPDATE_DISTANCE:
+            return { ...state, distance: action.payload };
 
         case ActionTypes.SET_OFFLINE:
             return { ...state, isOffline: action.payload };

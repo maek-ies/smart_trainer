@@ -5,6 +5,26 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/smart_trainer/',
+  server: {
+    proxy: {
+      '/api/intervals': {
+        target: 'https://intervals.icu',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/intervals/, '/api/v1'),
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        },
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
@@ -17,7 +37,7 @@ export default defineConfig({
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         icons: [
           {
             src: 'icon-512.png',
@@ -47,7 +67,28 @@ export default defineConfig({
             }
           }
         ]
+      },
+      devOptions: {
+        enabled: true
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('recharts')) {
+            return 'recharts';
+          }
+          if (id.includes('@markw65/fit-file-writer')) {
+            return 'fit-writer';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  }
 })

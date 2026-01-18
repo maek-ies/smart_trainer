@@ -13,6 +13,7 @@ const createDefaultProfile = (name = 'Default') => ({
     maxHr: 180,
     intervalsApiKey: '',
     intervalsAthleteId: '',
+    autoStartRide: false, // Auto-start ride when cycling detected for 5 seconds
     createdAt: new Date().toISOString(),
 });
 

@@ -1,21 +1,46 @@
 import { useState } from 'react';
-import { getRideHistory, deleteRideFromHistory, clearRideHistory } from '../services/rideHistoryService';
+import { getRideHistoryForProfile, deleteRideFromHistory, clearRideHistory } from '../services/rideHistoryService';
+import { useApp } from '../contexts/AppContext';
+import { generateFitFile, downloadFitFile, generateFitFilename } from '../services/fitService';
 import './History.css';
 
 function History({ onBack }) {
-    const [history, setHistory] = useState(() => getRideHistory());
+    const { state } = useApp();
+    const [history, setHistory] = useState(() => getRideHistoryForProfile(state.profile?.id));
 
     const handleDelete = (id) => {
         if (window.confirm('Delete this ride from history?')) {
             deleteRideFromHistory(id);
-            setHistory(getRideHistory());
+            setHistory(getRideHistoryForProfile(state.profile?.id));
         }
     };
 
     const handleClearAll = () => {
-        if (window.confirm('Clear ALL ride history? This cannot be undone.')) {
-            clearRideHistory();
+        if (window.confirm('Clear ALL your ride history? This cannot be undone.')) {
+            // Only clear rides for current profile
+            const allHistory = history;
+            allHistory.forEach(ride => deleteRideFromHistory(ride.id));
             setHistory([]);
+        }
+    };
+
+    const handleDownloadFit = (ride) => {
+        try {
+            // Check if ride has data points
+            if (!ride.dataPoints || ride.dataPoints.length === 0) {
+                alert('This ride does not have detailed data for FIT export.');
+                return;
+            }
+
+            // Generate FIT file
+            const fitBlob = generateFitFile(ride, state.profile);
+            const filename = generateFitFilename(ride.startTime);
+
+            // Download
+            downloadFitFile(fitBlob, filename);
+        } catch (err) {
+            console.error('Failed to download FIT file:', err);
+            alert('Failed to generate FIT file. Please try again.');
         }
     };
 
@@ -68,7 +93,17 @@ function History({ onBack }) {
                         <div key={ride.id} className="history-item card-elevated">
                             <div className="history-item-header">
                                 <span className="history-date">{formatDate(ride.startTime)}</span>
-                                <button className="btn-delete" onClick={() => handleDelete(ride.id)}>×</button>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <button
+                                        className="btn btn-secondary btn-small"
+                                        onClick={() => handleDownloadFit(ride)}
+                                        disabled={!ride.dataPoints || ride.dataPoints.length === 0}
+                                        title="Download FIT file"
+                                    >
+                                        💾 FIT
+                                    </button>
+                                    <button className="btn-delete" onClick={() => handleDelete(ride.id)}>×</button>
+                                </div>
                             </div>
                             <div className="history-stats">
                                 <div className="history-stat">
@@ -100,9 +135,9 @@ function History({ onBack }) {
                                                     const percent = (time / ride.duration) * 100;
                                                     if (percent < 1) return null;
                                                     return (
-                                                        <div 
-                                                            key={zone} 
-                                                            className={`zone-bar zone-${zone}`} 
+                                                        <div
+                                                            key={zone}
+                                                            className={`zone-bar zone-${zone}`}
                                                             style={{ width: `${percent}%` }}
                                                             title={`Z${zone}: ${Math.round(percent)}%`}
                                                         />
@@ -119,9 +154,9 @@ function History({ onBack }) {
                                                     const percent = (time / ride.duration) * 100;
                                                     if (percent < 1) return null;
                                                     return (
-                                                        <div 
-                                                            key={zone} 
-                                                            className={`zone-bar hr-zone-${zone}`} 
+                                                        <div
+                                                            key={zone}
+                                                            className={`zone-bar hr-zone-${zone}`}
                                                             style={{ width: `${percent}%` }}
                                                             title={`Z${zone}: ${Math.round(percent)}%`}
                                                         />

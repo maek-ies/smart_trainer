@@ -1,33 +1,40 @@
 // Intervals.icu Service - Fetch workouts and upload activities
 
-const API_BASE = 'https://intervals.icu/api/v1';
+// Intervals.icu Service - Fetch workouts and upload activities
+
+// Use relative path for proxying (works in Dev via Vite, Prod via Netlify Function)
+const API_BASE = '/api/intervals';
 
 /**
  * Create authorization header using API Key (Basic Auth)
  * Username: "API_KEY", Password: your personal API key
  */
 function getAuthHeader(apiKey) {
-    const credentials = btoa(`API_KEY:${apiKey}`);
+    const credentials = btoa(`API_KEY:${apiKey.trim()}`);
     return `Basic ${credentials}`;
 }
 
 /**
  * Fetch today's planned workout for an athlete
  * @param {Object} profile - User profile with intervalsApiKey and intervalsAthleteId
- * @returns {Promise<Object|null>} - Workout object or null if none found
+ * @returns {Promise<Object|null>} - Workout object, error object, or null if none found
  */
 export async function fetchTodayWorkout(profile) {
     if (!profile?.intervalsApiKey || !profile?.intervalsAthleteId) {
         console.warn('Intervals.icu credentials not configured');
-        return null;
+        return { error: 'Please configure your Intervals.icu credentials in profile settings.' };
     }
 
-    const athleteId = profile.intervalsAthleteId;
+    // Use '0' as athleteId for personal API keys as recommended
     const today = new Date().toISOString().split('T')[0];
+    const url = `${API_BASE}/athlete/0/events?oldest=${today}&newest=${today}&resolve=true&category=WORKOUT`;
+
+    console.debug('[Intervals] Fetching workouts from:', url);
+    console.debug('[Intervals] Using API Key:', profile.intervalsApiKey ? `${profile.intervalsApiKey.substring(0, 4)}...${profile.intervalsApiKey.slice(-4)}` : 'MISSING');
 
     try {
         const response = await fetch(
-            `${API_BASE}/athlete/${athleteId}/events?oldest=${today}&newest=${today}&resolve=true`,
+            url,
             {
                 method: 'GET',
                 headers: {
@@ -37,9 +44,19 @@ export async function fetchTodayWorkout(profile) {
             }
         );
 
+        console.debug('[Intervals] Response status:', response.status, response.statusText);
+
         if (!response.ok) {
-            console.error('Failed to fetch events:', response.status, response.statusText);
-            return null;
+            const errorText = await response.text();
+            console.error('[Intervals] Failed to fetch events:', response.status, response.statusText, errorText);
+
+            if (response.status === 401 || response.status === 403) {
+                return { error: 'Invalid API credentials. Please check your Athlete ID and API Key.' };
+            }
+            if (response.status === 404) {
+                return { error: 'Athlete not found. Please check your Athlete ID.' };
+            }
+            return { error: `Connection failed: ${response.status} ${response.statusText}` };
         }
 
         const events = await response.json();
@@ -64,7 +81,10 @@ export async function fetchTodayWorkout(profile) {
 
     } catch (error) {
         console.error('Error fetching workout:', error);
-        return null;
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            return { error: 'Network error. Please check your internet connection.' };
+        }
+        return { error: 'Failed to fetch workout. Please try again.' };
     }
 }
 
@@ -116,14 +136,15 @@ export async function uploadActivity(fitBlob, filename, profile) {
         throw new Error('Intervals.icu credentials not configured');
     }
 
-    const athleteId = profile.intervalsAthleteId;
-
     const formData = new FormData();
     formData.append('file', fitBlob, filename);
 
+    const url = `${API_BASE}/athlete/0/activities`;
+    console.debug('[Intervals] Uploading activity to:', url);
+
     try {
         const response = await fetch(
-            `${API_BASE}/athlete/${athleteId}/activities`,
+            url,
             {
                 method: 'POST',
                 headers: {
@@ -133,8 +154,11 @@ export async function uploadActivity(fitBlob, filename, profile) {
             }
         );
 
+        console.debug('[Intervals] Upload response status:', response.status, response.statusText);
+
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('[Intervals] Upload failed:', response.status, response.statusText, errorText);
             throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
 

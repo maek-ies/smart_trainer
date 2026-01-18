@@ -1,0 +1,5 @@
+# Proxy Intervals.icu API calls to the serverless function
+/api/intervals/*  /.netlify/functions/intervals-proxy  200
+
+# SPA Fallback for React Router
+/*  /index.html  200
