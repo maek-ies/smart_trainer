@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { generateFitFile, downloadFitFile, generateFitFilename } from '../services/fitService';
 import { uploadActivity, isIntervalsConfigured } from '../services/intervalsService';
+import { markRideAsUploaded } from '../services/rideHistoryService';
 import './RideSummary.css';
 
 const RideSummary = memo(function RideSummary({ rideData, profile, onClose }) {
@@ -37,6 +38,12 @@ const RideSummary = memo(function RideSummary({ rideData, profile, onClose }) {
             const fitBlob = generateFitFile(rideData, profile);
             const filename = generateFitFilename(rideData.startTime);
             await uploadActivity(fitBlob, filename, profile);
+
+            // Mark as uploaded in local history
+            if (rideData.historyId) {
+                markRideAsUploaded(rideData.historyId);
+            }
+
             setUploadStatus('success');
         } catch (err) {
             console.error('Failed to upload to Intervals.icu:', err);
@@ -108,9 +115,9 @@ const RideSummary = memo(function RideSummary({ rideData, profile, onClose }) {
                                             const percent = (time / rideData.duration) * 100;
                                             if (percent < 1) return null;
                                             return (
-                                                <div 
-                                                    key={zone} 
-                                                    className={`zone-bar zone-${zone}`} 
+                                                <div
+                                                    key={zone}
+                                                    className={`zone-bar zone-${zone}`}
                                                     style={{ width: `${percent}%` }}
                                                     title={`Z${zone}: ${Math.round(percent)}%`}
                                                 />
@@ -140,9 +147,9 @@ const RideSummary = memo(function RideSummary({ rideData, profile, onClose }) {
                                             const percent = (time / rideData.duration) * 100;
                                             if (percent < 1) return null;
                                             return (
-                                                <div 
-                                                    key={zone} 
-                                                    className={`zone-bar hr-zone-${zone}`} 
+                                                <div
+                                                    key={zone}
+                                                    className={`zone-bar hr-zone-${zone}`}
                                                     style={{ width: `${percent}%` }}
                                                     title={`Z${zone}: ${Math.round(percent)}%`}
                                                 />

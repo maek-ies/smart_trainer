@@ -1,17 +1,42 @@
 import { useState } from 'react';
-import { getRideHistoryForProfile, deleteRideFromHistory, clearRideHistory } from '../services/rideHistoryService';
+import { getRideHistoryForProfile, deleteRideFromHistory, markRideAsUploaded } from '../services/rideHistoryService';
 import { useApp } from '../contexts/AppContext';
 import { generateFitFile, downloadFitFile, generateFitFilename } from '../services/fitService';
+import { uploadActivity, isIntervalsConfigured } from '../services/intervalsService';
 import './History.css';
 
 function History({ onBack }) {
     const { state } = useApp();
     const [history, setHistory] = useState(() => getRideHistoryForProfile(state.profile?.id));
+    const [uploadingId, setUploadingId] = useState(null);
 
     const handleDelete = (id) => {
         if (window.confirm('Delete this ride from history?')) {
             deleteRideFromHistory(id);
             setHistory(getRideHistoryForProfile(state.profile?.id));
+        }
+    };
+
+    const handleUpload = async (ride) => {
+        if (!isIntervalsConfigured(state.profile)) {
+            alert('Intervals.icu is not configured for this profile.');
+            return;
+        }
+
+        setUploadingId(ride.id);
+        try {
+            const fitBlob = generateFitFile(ride, state.profile);
+            const filename = generateFitFilename(ride.startTime);
+            await uploadActivity(fitBlob, filename, state.profile);
+
+            markRideAsUploaded(ride.id);
+            setHistory(getRideHistoryForProfile(state.profile?.id));
+            alert('Successfully uploaded to Intervals.icu!');
+        } catch (err) {
+            console.error('Failed to upload ride:', err);
+            alert(`Upload failed: ${err.message}`);
+        } finally {
+            setUploadingId(null);
         }
     };
 
@@ -92,8 +117,23 @@ function History({ onBack }) {
                     history.map(ride => (
                         <div key={ride.id} className="history-item card-elevated">
                             <div className="history-item-header">
-                                <span className="history-date">{formatDate(ride.startTime)}</span>
+                                <div className="date-upload-group">
+                                    <span className="history-date">{formatDate(ride.startTime)}</span>
+                                    {ride.uploadedToIntervals && (
+                                        <span className="upload-badge success" title="Uploaded to Intervals.icu">☁️ Synced</span>
+                                    )}
+                                </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {!ride.uploadedToIntervals && isIntervalsConfigured(state.profile) && (
+                                        <button
+                                            className="btn btn-intervals btn-small"
+                                            onClick={() => handleUpload(ride)}
+                                            disabled={uploadingId === ride.id}
+                                            title="Upload to Intervals.icu"
+                                        >
+                                            {uploadingId === ride.id ? '⏳' : '☁️ Upload'}
+                                        </button>
+                                    )}
                                     <button
                                         className="btn btn-secondary btn-small"
                                         onClick={() => handleDownloadFit(ride)}

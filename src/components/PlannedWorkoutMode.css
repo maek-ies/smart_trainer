@@ -60,7 +60,146 @@
     padding: 10px;
 }
 
+/* Common Activity Header Styles for Selection List */
+.activity-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 14px;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
+    margin-bottom: 6px;
+}
+
+.activity-date-inline {
+    color: #ff4757;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.activity-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    color: #fff;
+    font-size: 10px;
+}
+
+.activity-stats {
+    display: flex;
+    gap: 4px;
+    font-size: 9px;
+    color: #888;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+
+.planned-tabs {
+    display: flex;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tab-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.workout-content-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-selection-view {
+    padding: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.plan-selection-view h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.planned-selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.planned-item {
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.planned-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.planned-item.selected {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(71, 126, 255, 0.1);
+}
+
+.no-workouts {
+    text-align: center;
+    padding: 50px;
+    color: #888;
+}
+
+.no-workouts p {
+    margin-bottom: 20px;
+}
+
 @media (max-width: 1000px) {
+    .plan-selection-view {
+        padding: 15px;
+    }
+
     .workout-layout {
         display: flex;
         flex-direction: column;

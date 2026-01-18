@@ -268,11 +268,14 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
 
         if (rideData && rideData.dataPoints.length > 0) {
             // Save to local history with profileId
-            saveRideToHistory(rideData, latestState.current.profile?.id);
+            const entry = saveRideToHistory(rideData, latestState.current.profile?.id);
 
             // Show ride summary modal
             console.log('Ride completed:', rideData.summary);
-            setCompletedRide(rideData);
+            setCompletedRide({
+                ...rideData,
+                historyId: entry?.id
+            });
         }
     }, [stopRide]);
 
@@ -384,10 +387,20 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
                         <>
                             <button
                                 className="btn btn-intervals btn-small"
-                                onClick={() => setIsPlannedWorkoutActive(true)}
+                                onClick={async () => {
+                                    if (!intervalsSummaryData && state.profile?.intervalsApiKey) {
+                                        setIsLoadingSummary(true);
+                                        const data = await fetchAthleteSummary(state.profile);
+                                        setIsLoadingSummary(false);
+                                        if (data && !data.error) {
+                                            setIntervalsSummaryData(data);
+                                        }
+                                    }
+                                    setIsPlannedWorkoutActive(true);
+                                }}
                                 style={{ marginLeft: '8px', marginRight: '8px' }}
                             >
-                                🚀 Planned Workout
+                                🚀 Plan
                             </button>
                             {isLoadingWorkout && (
                                 <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>⌛ Loading...</span>
@@ -623,12 +636,17 @@ function Dashboard({ onSwitchProfile, onShowHistory }) {
             {
                 isPlannedWorkoutActive && (
                     <PlannedWorkoutMode
-                        workout={VO2MAX_TEST_WORKOUT}
+                        upcomingWorkouts={intervalsSummaryData?.upcomingActivities || []}
                         state={state}
                         onTargetPowerChange={(power) => {
                             if (state.trainerStatus === 'connected') {
-                                setTargetPower(power);
-                                btSetTargetPower(power);
+                                // Handle power object (e.g. { value: 200, units: 'w' })
+                                let targetVal = typeof power === 'object' && power !== null
+                                    ? (power.value || power.start || 0)
+                                    : power;
+
+                                setTargetPower(targetVal);
+                                btSetTargetPower(targetVal);
                             }
                         }}
                         onComplete={() => {

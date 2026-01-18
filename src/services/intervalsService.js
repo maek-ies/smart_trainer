@@ -109,11 +109,77 @@ function parseWorkoutSteps(workoutDoc) {
             }
         } else {
             // Single step
+            let powerObj = null;
+
+            if (step.power) {
+                let val = step.power.value;
+                let start = step.power.start;
+                let end = step.power.end;
+                let units = step.power.units || '';
+                const unitsLower = String(units).toLowerCase();
+
+                // Debug raw step data
+                // console.log('[Intervals] Parsing step:', { val, start, end, units });
+
+                // Handle Zone targets
+                // Heuristic: If units imply Zones OR units imply % but value is small (1-7)
+                const isExplicitZone = unitsLower.includes('zone');
+
+                // Check if units are compatible with implicit zones (missing, %, %ftp)
+                const isPercentUnits = !units || unitsLower === '%' || unitsLower === '%ftp';
+
+                // Check values: val, or start/end range
+                // We use relaxed comparison for strings "1" == 1
+                const isZoneValue = (v) => v != null && v >= 1 && v <= 7;
+
+                // It's implicit zone if units are percent-ish AND (value is 1-7 OR start/end are 1-7)
+                // However, we must be careful not to trigger on 5% recovery if that exists (unlikely to be 5% explicitly, usually 40-50%)
+                const matchesZoneValue = isZoneValue(val) || (val == null && (isZoneValue(start) || isZoneValue(end)));
+
+                const isImplicitZone = isPercentUnits && matchesZoneValue;
+
+                if (isExplicitZone || isImplicitZone) {
+                    const zoneMap = {
+                        1: 55,   // Z1 (0-55%) -> 55%
+                        2: 65,   // Z2 (56-75%) -> 65% (Mid)
+                        3: 83,   // Z3 (76-90%) -> 83% (Mid)
+                        4: 98,   // Z4 (91-105%) -> 98% (Mid)
+                        5: 113,  // Z5 (106-120%) -> 113% (Mid)
+                        6: 135,  // Z6 (121-150%) -> 135% (Mid)
+                        7: 151   // Z7 (151%+) -> 151%
+                    };
+
+                    const mapZ = (v) => {
+                        if (v != null && zoneMap[Math.round(v)]) return zoneMap[Math.round(v)];
+                        return v;
+                    };
+
+                    // Apply mapping
+                    if (val != null && zoneMap[Math.round(val)]) {
+                        val = mapZ(val);
+                        // If it was a steady zone state, set start/end
+                        start = val;
+                        end = val;
+                        units = '%';
+                    } else {
+                        // Handle range zones 
+                        if (start != null) start = mapZ(start);
+                        if (end != null) end = mapZ(end);
+                        if (start || end) units = '%';
+                    }
+                }
+
+                powerObj = {
+                    value: val,
+                    start: start,
+                    end: end,
+                    units: units
+                };
+            }
+
             steps.push({
                 duration: step.duration || 0, // Duration in seconds
-                power: step.power?.value || null, // Absolute watts if resolved
-                powerLow: step.power?.start || null,
-                powerHigh: step.power?.end || null,
+                power: powerObj, // Full object with units
                 cadence: step.cadence?.value || null,
                 name: step.name || '',
             });
@@ -232,17 +298,45 @@ export async function fetchAthleteSummary(profile) {
             }
         }
 
+        // 3. Fetch upcoming activities (today + next 3 days)
+        const todayStr = new Date().toISOString().split('T')[0];
+        const threeDaysLater = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const eventsUrl = `${API_BASE}/athlete/0/events?oldest=${todayStr}&newest=${threeDaysLater}&resolve=true&category=WORKOUT`;
+        const eventsRes = await fetch(eventsUrl, { headers });
+
+        let upcomingActivities = [];
+        if (eventsRes.ok) {
+            const events = await eventsRes.json();
+            console.log('[Intervals] Upcoming events raw:', events);
+            upcomingActivities = events
+                .filter(e => e.workout_doc || e.type === 'Workout')
+                .map(e => ({
+                    id: e.id,
+                    date: e.start_date_local.split('T')[0],
+                    name: e.name,
+                    duration: e.workout_doc?.duration || e.planned_duration || 0,
+                    load: e.icu_training_load || e.training_load || e.workout_doc?.load || 0,
+                    intensity: e.icu_intensity || e.intensity || e.workout_doc?.intensity || 0,
+                    steps: parseWorkoutSteps(e.workout_doc),
+                    description: e.description || e.workout_doc?.description || '',
+                }))
+                .slice(0, 4); // Include today if multiple
+        }
+
         return {
             id: athlete.id,
             name: `${athlete.firstname} ${athlete.lastname}`,
-            ftp: ftp, // Use extracted FTP
-            weight: athlete.weight || athlete.icu_weight, // Fallback to icu_weight
+            ftp: ftp,
+            eFTP: recentSummary?.eftp || recentSummary?.icu_eftp || athlete.icu_eftp || 0,
+            weight: athlete.weight || athlete.icu_weight,
             maxHr: athlete.icu_max_hr || athlete.max_hr,
             restingHr: athlete.icu_resting_hr || athlete.resting_hr,
-            fitness: recentSummary?.fitness || recentSummary?.ctl || 0, // Fitness key seems to be 'fitness' in summary
-            fatigue: recentSummary?.fatigue || recentSummary?.atl || 0, // Fatigue key seems to be 'fatigue'
-            form: recentSummary?.form || recentSummary?.tsb || 0,    // Form key seems to be 'form'
-            load: recentSummary?.training_load || recentSummary?.load || 0 // load key is 'training_load'
+            fitness: recentSummary?.fitness || recentSummary?.ctl || 0,
+            fatigue: recentSummary?.fatigue || recentSummary?.atl || 0,
+            form: recentSummary?.form || recentSummary?.tsb || 0,
+            acwr: recentSummary?.acwr || 0,
+            load: recentSummary?.training_load || recentSummary?.load || 0,
+            upcomingActivities
         };
 
     } catch (error) {

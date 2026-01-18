@@ -27,6 +27,7 @@ export default async (req, context) => {
             method: req.method,
             headers: headers,
             body: req.method === "POST" ? req.body : undefined,
+            duplex: 'half',
         });
 
         console.log(`[Proxy] Response status: ${response.status}`);

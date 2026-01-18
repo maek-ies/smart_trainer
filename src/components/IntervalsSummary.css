@@ -53,8 +53,16 @@
 .athlete-info {
     margin-bottom: 24px;
     background: rgba(255, 255, 255, 0.05);
-    padding: 15px;
+    padding: 0;
     border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.athlete-info .info-row:first-child {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .info-row {
@@ -79,6 +87,36 @@
 
 .value.highlight {
     color: #2ed573;
+}
+
+.value.highlight-alt {
+    color: #eccc68;
+}
+
+.value.warning {
+    color: #ffa502;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0;
+}
+
+.info-grid .info-row {
+    padding: 12px 15px;
+    margin-bottom: 0;
+    position: relative;
+}
+
+.info-grid .info-row:nth-child(odd) {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-grid .info-row:nth-child(1),
+.info-grid .info-row:nth-child(2) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stats-grid {
@@ -114,6 +152,203 @@
 
 .stat-value.negative {
     color: #ffa502;
+}
+
+.upcoming-section {
+    margin-bottom: 24px;
+}
+
+.upcoming-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.upcoming-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upcoming-item.clickable {
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+}
+
+.upcoming-item.clickable:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.activity-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 14px;
+    overflow: hidden;
+    color: #ccc;
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
+    /* Force single row */
+}
+
+.activity-date-inline {
+    color: #ff4757;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    font-size: 10px;
+    flex-shrink: 0;
+    /* Don't squash date */
+}
+
+.activity-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    /* Take remaining space */
+    color: #fff;
+    font-size: 10px;
+}
+
+.activity-stats {
+    display: flex;
+    gap: 4px;
+    font-size: 9px;
+    color: #888;
+    white-space: nowrap;
+    flex-shrink: 0;
+    /* Don't squash stats */
+}
+
+.activity-stats span {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.workout-detail-view {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: #ff4757;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    text-align: left;
+    width: fit-content;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+}
+
+.detail-header h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #fff;
+}
+
+.detail-stats {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.detail-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.compact-workout-chart {
+    height: 28px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+}
+
+.no-steps-placeholder {
+    height: 9px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+    /* Hide text as it's too small */
+    color: transparent;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 2px;
+}
+
+.detail-chart-wrapper {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    height: 45px;
+}
+
+.detail-chart-wrapper .compact-workout-chart {
+    height: 25px;
+}
+
+.detail-description {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.detail-description h5 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.description-text {
+    margin: 0;
+    font-size: 12px;
+    color: #ccc;
+    white-space: pre-wrap;
+    font-family: inherit;
+    line-height: 1.5;
 }
 
 .connection-status {

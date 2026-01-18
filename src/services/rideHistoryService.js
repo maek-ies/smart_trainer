@@ -83,6 +83,22 @@ export function deleteRideFromHistory(rideId) {
 }
 
 /**
+ * Mark a ride as uploaded to Intervals.icu
+ */
+export function markRideAsUploaded(rideId) {
+    try {
+        const history = getRideHistory();
+        const ride = history.find(r => r.id === rideId);
+        if (ride) {
+            ride.uploadedToIntervals = true;
+            localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(history));
+        }
+    } catch (e) {
+        console.error('Error marking ride as uploaded:', e);
+    }
+}
+
+/**
  * Clear all ride history
  */
 export function clearRideHistory() {

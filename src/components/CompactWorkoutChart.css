@@ -1,0 +1,19 @@
+.compact-workout-chart {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+}
+
+.no-steps-placeholder {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+    color: transparent;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 2px;
+}
