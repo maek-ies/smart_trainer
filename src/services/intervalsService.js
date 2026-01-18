@@ -201,6 +201,7 @@ export async function fetchAthleteSummary(profile) {
             throw new Error(`Failed to fetch athlete data: ${athleteRes.status}`);
         }
         const athlete = await athleteRes.json();
+        console.log('[Intervals] Athlete Data:', athlete);
 
         // 2. Fetch recent summary (last 42 days for charts, but we verify connection mostly)
         // We'll just ask for the last few days to get current fitness/fatigue
@@ -214,6 +215,7 @@ export async function fetchAthleteSummary(profile) {
         let recentSummary = null;
         if (summaryRes.ok) {
             const summaryData = await summaryRes.json();
+            console.log('[Intervals] Summary Data:', summaryData);
             // Get the last entry (today or most recent)
             if (summaryData.length > 0) {
                 recentSummary = summaryData[summaryData.length - 1];
